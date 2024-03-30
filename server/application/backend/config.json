@@ -1,0 +1,5 @@
+{
+  "DATABASE_NAME": "sqlitedb",
+  "TOKEN_SHOW_LIMIT": 4,
+  "FIREBASE_JSON": "instance/servernotification-767d6-4d8506505911.json"
+}

@@ -1,0 +1,70 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+
+  before_all do
+    PROD_APP_IDENTIFIER = "org.fnives.android.servernotifications"
+
+    # Environment variable should be the full path to the PlayStore auth .json
+    PLAY_STORE_AUTH_FILE = ENV['PNS_ANDROID_PLAY_STORE_AUTH_FILE']
+  end
+
+  desc "Submit a new Production Build to Play Store"
+  desc "By Default it sets the version_code to last from PlayStore + 1."
+  desc ">Optionally version code increase can be skipped via:"
+  desc "```sh"
+  desc "[bundle exec] fastlane deployProdToPlayStore skip_build_number_increase:true"
+  desc "```"
+  lane :deployProdToPlayStore do |options|
+    skip_build_number_increase = options[:skip_build_number_increase] # optional, if not set, it gets the last from PlayStore then adds + 1
+    package_name = PROD_APP_IDENTIFIER
+
+    if skip_build_number_increase.nil? || skip_build_number_increase.empty? || !skip_build_number_increase
+        last_version_codes = google_play_track_version_codes(
+            track: 'internal',
+            json_key: PLAY_STORE_AUTH_FILE,
+            package_name: package_name
+        )
+        last_version_code = last_version_codes[0]
+        version_code = last_version_code + 1
+    end
+
+    gradle(task: 'clean', flags: "--no-daemon")
+    gradle(
+        task: 'bundle',
+        build_type: 'release',
+        flags: "--no-daemon",
+        properties: {
+            "applicationId" => PROD_APP_IDENTIFIER,
+            "versionCode" => version_code
+        }
+    )
+    production_aab = lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+    mapping_file_path = lane_context[SharedValues::GRADLE_MAPPING_TXT_OUTPUT_PATH]
+
+    upload_to_play_store(
+        track: 'internal',
+        release_status: 'draft', # can remove once app is released to the public
+        aab: production_aab,
+        json_key: PLAY_STORE_AUTH_FILE,
+        skip_upload_apk: true,
+        package_name: package_name,
+        mapping_paths: [mapping_file_path]
+    )
+   end
+end

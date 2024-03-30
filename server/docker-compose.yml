@@ -1,0 +1,11 @@
+services:
+  notification_service:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: "unless-stopped"
+    ports:
+      - 127.0.0.1:8080:3000
+      #- 8080:80
+    volumes:
+      - ./application:/home/flask/server

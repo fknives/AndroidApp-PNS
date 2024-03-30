@@ -1,0 +1,64 @@
+name: Deploy to Play Store Internal
+
+on:
+  workflow_dispatch:
+    inputs:
+      skipBuildNumberIncrease:
+        description: 'Skip automatic build number increase'
+        type: boolean
+        default: false
+  release:
+    types: [published]
+
+jobs:
+  android-publish-to-play-store:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ./android
+    env: # $BUNDLE_GEMFILE must be set at the job level, so it is set for all steps
+      BUNDLE_GEMFILE: ${{ github.workspace }}/android/Gemfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby & Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2.1'
+          bundler-cache: true
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+          # caching currently disabled, because the files are large, but don't decrease built time too much
+          #cache: gradle
+
+      - name: Restore Release Keystore
+        env:
+          keystore_base64: ${{ secrets.PNS_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$keystore_base64" | base64 --decode > release.keystore
+          echo "PNS_KEYSTORE=`pwd`/release.keystore" >> $GITHUB_ENV
+      - name: Restore PlayStore Service Account
+        env:
+          play_store_service_account_json: ${{ secrets.PNS_ANDROID_PLAY_STORE_AUTH_JSON }}
+        run: |
+          echo "$play_store_service_account_json" > play-store-distribution-service-account.json
+          echo "PNS_ANDROID_PLAY_STORE_AUTH_FILE=`pwd`/play-store-distribution-service-account.json" >> $GITHUB_ENV
+      - name: Restore google-services.json
+        env:
+          android_google_service_json: ${{ secrets.PNS_ANDROID_GOOGLE_SERVICE_JSON }}
+        run: |
+          echo "$android_google_service_json" > app/google-services.json
+
+      - name: Deploy to Play Store Internal Track
+        env:
+          PNS_KEY: ${{ secrets.PNS_ANDROID_KEYSTORE_KEY_ALIAS }}
+          PNS_PASS: ${{ secrets.PNS_ANDROID_KEYSTORE_KEY_PASSWORD }}
+          PNS_KEY_PASS: ${{ secrets.PNS_ANDROID_KEYSTORE_STORE_PASSWORD }}
+          PNS_BASE_URL: ${{ secrets.PNS_BASE_URL }}
+        run: bundle exec fastlane deployProdToPlayStore skip_build_number_increase:${{ github.event.inputs.skipBuildNumberIncrease }}

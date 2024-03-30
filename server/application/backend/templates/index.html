@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registered devices</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script type="text/javascript" src="{{ url_for('static', filename='index.js') }}" defer></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='android.js') }}" defer></script>
+</head>
+<body>
+<div id="container">
+<h1>Registered devices <button class="icon_button" id="add_device"> <span class="material-symbols-outlined">add_circle</span></button></h1>
+<table id="devices">
+    <tr>
+        <th>Device Name</th>
+        <th>Token</th>
+        <th>Action</th>
+    </tr>
+{% for device in devices %}
+  <tr>
+      <td>{{ device[0] }}</td>
+      <td>{{ device[1] }}</td>
+      <td>
+          <form action="/delete" method="post">
+              <input type="hidden" name="device_name" value="{{ device[0] }}"/>
+              <input type="submit" class="icon_button material-symbols-outlined" value="delete"/>
+          </form>
+      </td>
+  </tr>
+{% endfor %}
+</table>
+<form action="/notify" method="post">
+    <h3>Send test notification
+        <input type="hidden" value="test-service" name="service"/>
+        <input type="hidden" value="Medium" name="priority"/>
+        <input type="hidden" value="Test Log" name="log"/>
+        <input type="submit" class="icon_button material-symbols-outlined" value="send"/>
+    </h3>
+</form>
+</div>
+<dialog id="add_device_dialog">
+    <form action="/register" method="post">
+        <label for="add_device_name">Device name</label><br>
+        <input type="text" id="add_device_name" name="device_name" placeholder="Device name"><br><br>
+
+        <label for="add_device_token">Device Token</label><br>
+        <input type="text" id="add_device_token" name="device_token" placeholder="Device Token"><br><br>
+
+        <label for="add_encryption_key">Encryption Key</label><br>
+        <input type="password" id="add_encryption_key" name="encryption_key" placeholder="Encryption Key"><br><br>
+
+        <input type="submit" class="primary" value="Submit" style="float: right;" autofocus="true">
+    </form>
+</dialog>
+</body>
+</html>
