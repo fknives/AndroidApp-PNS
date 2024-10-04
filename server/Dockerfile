@@ -1,5 +1,8 @@
 FROM python:3.9-bullseye
 
+ARG UID=1000
+ARG GID=1000
+
 # ENV setup
 RUN ["python","--version"]
 RUN ["apt-get", "update"]
@@ -11,7 +14,8 @@ RUN ["pip", "install", "firebase_admin"]
 RUN ["pip", "install", "pycryptodome"]
 RUN ["pip", "install", "watchdog"]
 
-RUN adduser --system --no-create-home flask
+RUN groupadd -g $GID -o flask
+RUN adduser -u $UID -g $GID --no-create-home flask
 USER flask
 
 WORKDIR /home/flask/server
