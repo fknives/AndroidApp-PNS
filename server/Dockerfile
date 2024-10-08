@@ -15,7 +15,7 @@ RUN ["pip", "install", "pycryptodome"]
 RUN ["pip", "install", "watchdog"]
 
 RUN groupadd -g $GID -o flask
-RUN adduser -u $UID -g $GID --no-create-home flask
+RUN adduser -u $UID --gid $GID --no-create-home flask
 USER flask
 
 WORKDIR /home/flask/server
